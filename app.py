@@ -855,6 +855,7 @@ from dash.dependencies import Input, Output, State
 
 df = pd.read_csv('full_data', parse_dates=['Date'])  # replace with your actual data file
 app = Dash(__name__)
+server = app.server
 
 
 app.layout = html.Div([
