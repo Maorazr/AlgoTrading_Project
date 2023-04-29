@@ -11,6 +11,7 @@ df = pd.read_csv('sample_etf_data.csv', parse_dates=['Date'])  # replace with yo
 results_df = pd.read_csv('combined_results.csv', parse_dates=['Date'])
 
 app = Dash(__name__)
+server = app.server
 
 with open('summary_results.json', 'r') as f:
     strategy_summaries = json.load(f)
