@@ -7,12 +7,12 @@ from dash import Dash, dcc, html
 from dash.dependencies import Input, Output, State
 import json
 
-df = pd.read_csv('../new/sample_etf_data.csv', parse_dates=['Date'])  # replace with your actual data file
-results_df = pd.read_csv('../new/combined_results.csv', parse_dates=['Date'])
+df = pd.read_csv('sample_etf_data.csv', parse_dates=['Date'])  # replace with your actual data file
+results_df = pd.read_csv('combined_results.csv', parse_dates=['Date'])
 
 app = Dash(__name__)
 
-with open('../new/summary_results.json', 'r') as f:
+with open('summary_results.json', 'r') as f:
     strategy_summaries = json.load(f)
 
 app.layout = html.Div([
