@@ -113,7 +113,7 @@ def create_fig(ticker, data_type, strategy_summaries, start_date=None, end_date=
             height=900,
             title=f'Ticker: {ticker}',
             hovermode='x unified',
-            # Add or modify layout options for Results Data as needed
+            yaxis1=dict(domain=[0.5, 1], anchor='x', title='Close', title_standoff=10),
         )
     
 
