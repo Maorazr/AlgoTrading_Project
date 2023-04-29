@@ -131,11 +131,11 @@ def update_graph(data_type, ticker, n_clicks, start_date, end_date):
     return create_fig(ticker, data_type, strategy_summaries, start_date, end_date)
 
 
-@app.callback(
-    Output("stats", "figure"),
-    [Input("data-type-dropdown", "value"),
-     Input("ticker-dropdown", "value")]
-)
+# @app.callback(
+#     Output("stats", "figure"),
+#     [Input("data-type-dropdown", "value"),
+#      Input("ticker-dropdown", "value")]
+# )
 def update_stats(data_type, ticker):
     if data_type == 'Stats':
         return create_fig(ticker, data_type, strategy_summaries)
