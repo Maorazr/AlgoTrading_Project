@@ -108,7 +108,7 @@ def create_fig(ticker, data_type, strategy_summaries, start_date=None, end_date=
         fig.add_trace(go.Scatter(x=ticker_data.index, y=ticker_data['Open'], mode='lines', name='Portfolio size over time'))
         fig.add_trace(go.Scatter(x=ticker_data.index, y=ticker_data['Pos'], mode='lines', name='Pos'))
         fig.add_trace(go.Scatter(x=ticker_data.index, y=ticker_data['Balance'], mode='lines', name='Balance over time'))
-        fig.add_trace(go.Scatter(x=ticker_data.index, y=ticker_data['Return rate with comm'], mode='lines', name='ret over time'))
+        fig.add_trace(go.Scatter(x=ticker_data.index, y=ticker_data['Return rate'], mode='lines', name='ret over time'))
         fig.update_layout(
             height=900,
             title=f'Ticker: {ticker}',
