@@ -84,48 +84,73 @@ def makeit(df, params=[[20], [20], [14, 0.015], 14]):
     return df.copy()
 
 
+def validated_input(prompt, validation_fn, *args):
+    while True:
+        try:
+            value = input(prompt)
+            return validation_fn(value, *args)
+        except Exception as e:
+            print(f"Invalid input, please try again. Error: {e}")
+
+
+
+def parse_ticker_list(value, etf_list):
+    if value.strip() == '':
+        return etf_list
+    else:
+        return [ticker.strip().upper() for ticker in value.split(',')]
+
+
+def parse_date_range(value):
+    start_date, end_date = value.split(',')
+    return start_date.strip(), end_date.strip()
+
+
+def parse_int_list(value):
+    return [int(w.strip()) for w in value.split(',')]
+
+
+def parse_cci_params(value):
+    cci_period, cci_std = map(float, value.split(','))
+    return [int(cci_period), cci_std]
+
+
+def parse_rsi_window(value):
+    return int(value.strip())
+
+
 def main():
     etf_list = ['^RUT', '^GSPC', '^STI', '^FCHI', '^HSI', '^NYA', '^AEX', '^TA125.TA', 'TA35.TA', '^N225', '^SSMI',
                 '^IXIC', '^STOXX']
-    ticker_list = input("Please enter a list of tickers separated by commas (leave blank for default): ")
-    if ticker_list.strip() == '':
-        ticker_list = etf_list
-    else:
-        ticker_list = ticker_list = [ticker.strip().upper() for ticker in ticker_list.split(',')]
 
+    ticker_list = validated_input("Please enter a list of tickers separated by commas (leave blank for default): ",
+                                  parse_ticker_list, etf_list)
     print(f"Using the following tickers: {ticker_list}")
 
-    start_date, end_date = input("Please enter start and end dates (YYYY-MM-DD,YYYY-MM-DD): ").split(',')
-    start_date = start_date.strip()
-    end_date = end_date.strip()
+    start_date, end_date = validated_input("Please enter start and end dates (YYYY-MM-DD,YYYY-MM-DD): ",
+                                           parse_date_range)
     print(f"You entered the following date range: {start_date} - {end_date}")
+
     etf_data = get_all_data(ticker_list, start_date, end_date)
     etf_data.to_csv("../Data/etf_data.csv")
 
-    sma_windows = input("Please enter a list of SMA windows separated by commas: ")
-    sma_windows = [int(w.strip()) for w in sma_windows.split(',')]
+    sma_windows = validated_input("Please enter a list of SMA windows separated by commas: ", parse_int_list)
     print(f"You entered the following SMA windows: {sma_windows}")
 
-    std_windows = input("Please enter a list of STD windows separated by commas: ")
-    std_windows = [int(w.strip()) for w in std_windows.split(',')]
+    std_windows = validated_input("Please enter a list of STD windows separated by commas: ", parse_int_list)
     print(f"You entered the following STD windows: {std_windows}")
 
-    cci_period, cci_std = map(float,
-                              input("Please enter a list of CCI parameters separated by commas period,std : ").split(
-                                  ','))
-    cci_period = int(cci_period)
-    cci_params = [cci_period, cci_std]
+    cci_params = validated_input("Please enter a list of CCI parameters separated by commas period,std : ",
+                                 parse_cci_params)
     print(f"You entered the following CCI parameters: {cci_params}")
 
-    rsi_window = input("Please enter a RSI window: ")
-    rsi_window = int(rsi_window.strip())
+    rsi_window = validated_input("Please enter a RSI window: ", parse_rsi_window)
     print(f"You entered the following RSI window: {rsi_window}")
 
     params = [sma_windows, std_windows, cci_params, rsi_window]
     print(f"Using the following parameters: {params}")
     file_name = input("Please enter a file name: ")
     makeit(etf_data, params).to_csv(f"../Data/{file_name}.csv")
-
 
 
 if __name__ == '__main__':
