@@ -1,8 +1,8 @@
 import pandas as pd
 import yfinance as yf
 import numpy as np
-
-
+from file_chooser import choose_file
+import os
 def get_all_data(list, date1, date2):
     all_etf_data = pd.DataFrame()
     for tkr_str in list:
@@ -28,7 +28,7 @@ def calculate_std(df, window_sizes=[20]):
 
 def calculate_cci(data, params=[14, 0.015]):
     # Calculate the Typical Price (TP)
-    data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3
+    data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3   
 
     # Calculate the Moving Average of TP
     data["TP_SMA"] = data.groupby('Ticker')["TP"].transform(lambda x: x.rolling(window=params[0]).mean())
@@ -79,8 +79,10 @@ def makeit(df, params=[[20], [20], [14, 0.015], 14]):
 
     df = pd.concat(modified_dfs, ignore_index=True)
     df = df.dropna().reset_index(drop=True)
-    df["BU"] = df['SMA_20'] + df['STD_20']*2
-    df["BL"] = df['SMA_20'] - df['STD_20']*2
+    sma_period = params[0][0]
+    std_period = params[1][0]
+    df["BU"] = df[f'SMA_{sma_period}'] + df[f'STD_{std_period}']*2
+    df["BL"] = df[f'SMA_{sma_period}'] - df[f'STD_{std_period}']*2
     return df.copy()
 
 
@@ -122,17 +124,31 @@ def parse_rsi_window(value):
 def main():
     etf_list = ['^RUT', '^GSPC', '^STI', '^FCHI', '^HSI', '^NYA', '^AEX', '^TA125.TA', 'TA35.TA', '^N225', '^SSMI',
                 '^IXIC', '^STOXX']
-
-    ticker_list = validated_input("Please enter a list of tickers separated by commas (leave blank for default): ",
+    
+    download_data = input("Do you want to download data? (y/n): ")
+    if download_data.lower() == 'y':
+        ticker_list = validated_input("Please enter a list of tickers separated by commas (leave blank for default): ",
                                   parse_ticker_list, etf_list)
-    print(f"Using the following tickers: {ticker_list}")
-
-    start_date, end_date = validated_input("Please enter start and end dates (YYYY-MM-DD,YYYY-MM-DD): ",
+        print(f"Using the following tickers: {ticker_list}")
+        start_date, end_date = validated_input("Please enter start and end dates (YYYY-MM-DD,YYYY-MM-DD): ",
                                            parse_date_range)
-    print(f"You entered the following date range: {start_date} - {end_date}")
+        print(f"You entered the following date range: {start_date} - {end_date}")
+        etf_data = get_all_data(ticker_list, start_date, end_date)
+        etf_data.to_csv(f"../Data/OHLCV/{start_date} - {end_date}_OHLCV.csv")
 
-    etf_data = get_all_data(ticker_list, start_date, end_date)
-    etf_data.to_csv("../Data/etf_data.csv")
+    else:
+        processe_data = input('Do you want to open file from home directory? (y/n): ')
+        if processe_data.lower() == 'y':
+            data_directory = input("Enter the path of the directory containing data files: ")
+            chosen_file = choose_file(data_directory)
+            input_name, _ = os.path.splitext(chosen_file)
+            etf_data = pd.read_csv(os.path.join(data_directory, f"{input_name}.csv"))
+        else:
+            return True
+    
+
+    # etf_data = get_all_data(ticker_list, start_date, end_date)
+    # etf_data.to_csv("../Data/etf_data.csv")
 
     sma_windows = validated_input("Please enter a list of SMA windows separated by commas: ", parse_int_list)
     print(f"You entered the following SMA windows: {sma_windows}")
@@ -150,7 +166,7 @@ def main():
     params = [sma_windows, std_windows, cci_params, rsi_window]
     print(f"Using the following parameters: {params}")
     file_name = input("Please enter a file name: ")
-    makeit(etf_data, params).to_csv(f"../Data/{file_name}.csv")
+    makeit(etf_data, params).to_csv(f"../Data/Processed/{file_name}.csv")
 
 
 if __name__ == '__main__':

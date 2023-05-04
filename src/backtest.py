@@ -23,7 +23,7 @@ class Backtest:
         balance: int,
         strategy: Strategy,
         leverage: int = 1.0,
-        window_size: int = 100,
+        window_size: int = 20,
         buy_percentage: float = 0.05,
     ):
         self.data = data

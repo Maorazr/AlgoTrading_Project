@@ -7,12 +7,10 @@ from utils import adjust_types
 from typing import Dict, Any
 import json
 from simple_colors import red
-
+from file_chooser import choose_file
+import os
 
 class Summary:
-
-
-
     def __init__(self, data=None):
         if data is not None:
             if not isinstance(data.index, pd.DatetimeIndex):
@@ -147,14 +145,16 @@ class Summary:
 
 
 def main():
-    input_name = input("Enter file name to read: ")
-    path = f"../results/{input_name}.csv"
-    data = pd.read_csv(path)
+
+    data_directory = input("Enter the path of the directory containing data files: ")
+    input_name, _ = os.path.splitext(choose_file(data_directory))
+    data = pd.read_csv(os.path.join(data_directory, f"{input_name}.csv"))
     unique_tickers = data['Ticker'].unique()
     unique_strategies = data['Strategy'].unique()
 
     summary_results = {}
     for ticker in unique_tickers:
+        summary_results[ticker] = {}
         for strategy in unique_strategies:
             ticker_strategy_data = data[(data["Ticker"] == ticker) & (data['Strategy'] == strategy)]
             summary = Summary(ticker_strategy_data)
@@ -163,7 +163,9 @@ def main():
             summary.print_results()
             print("\n")
     output_name = input("Enter file name to save summary results: ")
-    with open(f"{output_name}.json", "w") as outfile:
+    output_directory = "output"  # Change this to the desired folder
+    output_path = f"../results/Json_stat/{output_name}.json"
+    with open(output_path, "w") as outfile:
         json.dump(summary_results, outfile, indent=4)
 
 

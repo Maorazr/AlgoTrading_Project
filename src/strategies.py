@@ -6,19 +6,19 @@ import pandas as pd
 
 
 class BollingerRSIStrategy(Strategy):
-    def __init__(self, rsi_high_mul=1.0, rsi_low_mul=1.0, stop_loss=0.07, name=""):
-        self.rsi_high_mul = rsi_high_mul
-        self.rsi_low_mul = rsi_low_mul
+    def __init__(self, rsi_high=70, rsi_low=30, stop_loss=1, name=""):
+        self.rsi_high = rsi_high
+        self.rsi_low = rsi_low
         super().__init__(name)
 
         self.stop_loss = stop_loss
-        self.name = "BbRSI"
+        self.name = "BB_RSI"
 
     def enter_position(self, data: pd.DataFrame) -> BrokerInstruction:
         last_row = data.iloc[-1]
-        if last_row["Open"] < last_row["BL"] and last_row["RSI"] < (30 * self.rsi_low_mul):
+        if last_row["Open"] < last_row["BL"] and last_row["RSI"] < self.rsi_low:
             return BrokerInstruction(OrderType.OPEN_LONG, last_row["Open"])
-        elif last_row["Open"] > last_row["BU"] and last_row["RSI"] > (70 * self.rsi_high_mul):
+        elif last_row["Open"] > last_row["BU"] and last_row["RSI"] > self.rsi_high:
             return BrokerInstruction(OrderType.OPEN_SHORT, last_row["Open"])
 
     def exit_position(self, data: pd.DataFrame, position: Position) -> BrokerInstruction:
@@ -37,18 +37,18 @@ class BollingerRSIStrategy(Strategy):
 
 
 class BollingerCCIStrategy(Strategy):
-    def __init__(self, cci_high_mul=1.0, cci_low_mul=1.0, stop_loss=0.07, name="", ):
-        self.cci_high_mul = cci_high_mul
-        self.cci_low_mul = cci_low_mul
+    def __init__(self, cci_high=100, cci_low=-100, stop_loss=1, name="", ):
+        self.cci_high = cci_high
+        self.cci_low = cci_low
         super().__init__(name)
         self.stop_loss = stop_loss
-        self.name = "BbCCI"
+        self.name = "BB_CCI"
 
     def enter_position(self, data: pd.DataFrame) -> BrokerInstruction:
         last_row = data.iloc[-1]
-        if last_row["Open"] < last_row["BL"] and last_row["CCI"] < (-100 * self.cci_low_mul):
+        if last_row["Open"] < last_row["BL"] and last_row["CCI"] < self.cci_low:
             return BrokerInstruction(OrderType.OPEN_LONG, last_row["Open"])
-        elif last_row["Open"] > last_row["BU"] and last_row["CCI"] > (100 * self.cci_high_mul):
+        elif last_row["Open"] > last_row["BU"] and last_row["CCI"] > self.cci_high:
             return BrokerInstruction(OrderType.OPEN_SHORT, last_row["Open"])
 
     def exit_position(self, data: pd.DataFrame, position: Position) -> BrokerInstruction:
@@ -68,7 +68,7 @@ class BollingerCCIStrategy(Strategy):
 
 class BuyAndHold(Strategy):
     def __init__(self):
-        self.name = "HOLD"
+        self.name = "B&H"
 
     def enter_position(self, data: pd.DataFrame) -> BrokerInstruction:
         # if data.index[0] == 0:

@@ -7,13 +7,25 @@ from dash import Dash, dcc, html
 from dash.dependencies import Input, Output, State
 import json
 
-df = pd.read_csv('sample_etf_data.csv', parse_dates=['Date'])  # replace with your actual data file
-results_df = pd.read_csv('combined_results.csv', parse_dates=['Date'])
+df = pd.read_csv('Data/Processed/2015-01_2019-12_[14,14,10,0.015,10]_data.csv', parse_dates=['Date'])  # replace with your actual data file
+results_df = pd.read_csv('results/2015-01_2019-12_[14,14,10,0.015,10]_0.1stop_62-38_res.csv', parse_dates=['Date'])
+
+sma_column = None
+
+def find_sma_column(ticker_data):
+    global sma_column
+    for col_name in ticker_data.columns:
+        if col_name.startswith('SMA_'):
+            sma_column = col_name
+            break
+
+find_sma_column(results_df)
+
 
 app = Dash(__name__)
 server = app.server
 
-with open('summary_results.json', 'r') as f:
+with open('results/Json_stat/2015-01_2019-12_[14,14,10,0.015,10]_0.1stop_62-38_stats.json', 'r') as f:
     strategy_summaries = json.load(f)
 
 app.layout = html.Div([
@@ -44,11 +56,15 @@ def create_fig(ticker, data_type, strategy_summaries, start_date=None, end_date=
         ticker_data = df[df['Ticker'] == ticker]
     elif data_type == 'Results Data':
         ticker_data = results_df[results_df['Ticker'] == ticker]
+
     elif data_type == 'Stats':
         ticker_strategy_keys = [key for key in strategy_summaries.keys() if key.startswith(ticker)]
         strategy_results = {key: strategy_summaries[key] for key in ticker_strategy_keys}
         rows = []
         for strategy_name, summary in strategy_results.items():
+            if not summary:  # Skip if the summary is empty
+                continue
+
             row = {
                 'Strategy': strategy_name,
                 'Total return': summary['Total return'],
@@ -64,6 +80,26 @@ def create_fig(ticker, data_type, strategy_summaries, start_date=None, end_date=
                 'Positive trading days': summary['Positive trading days'],
             }
             rows.append(row)
+    # elif data_type == 'Stats':
+    #     ticker_strategy_keys = [key for key in strategy_summaries.keys() if key.startswith(ticker)]
+    #     strategy_results = {key: strategy_summaries[key] for key in ticker_strategy_keys}
+    #     rows = []
+    #     for strategy_name, summary in strategy_results.items():
+    #         row = {
+    #             'Strategy': strategy_name,
+    #             'Total return': summary['Total return'],
+    #             'Sharpe': summary['Sharpe'],
+    #             'Sortino': summary['Sortino'],
+    #             'Max balance drawdown': summary['Max balance drawdown'],
+    #             'Max drawdown': summary['Max drawdown'],
+    #             'Returns std': summary['Returns std'],
+    #             'Downside deviation': summary['Downside deviation'],
+    #             'Best trade': summary['Best trade'],
+    #             'Worst trade': summary['Worst trade'],
+    #             'Positive trades': summary['Positive trades'],
+    #             'Positive trading days': summary['Positive trading days'],
+    #         }
+    #         rows.append(row)
 
         stats_df = pd.DataFrame(rows)
         fig = go.Figure(data=[go.Table(
@@ -87,7 +123,7 @@ def create_fig(ticker, data_type, strategy_summaries, start_date=None, end_date=
         fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['Close'], mode='lines', name='Close', yaxis='y1'))
         fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['BU'], line_color='green', name='BU', yaxis='y1'))
         fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['BL'], line_color='red', name='BL', yaxis='y1'))
-        fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['SMA_20'], line_color='orange', name='SMA_20', yaxis='y1'))
+        fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data[sma_column], line_color='orange', name=sma_column, yaxis='y1'))
         fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['RSI'], line_color='blue', name='RSI', yaxis='y2'))
         fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['CCI'], line_color='purple', name='CCI', yaxis='y3'))
         fig.add_trace(go.Bar(x=ticker_data['Date'], y=ticker_data['Volume'], showlegend=False, yaxis='y4'))
