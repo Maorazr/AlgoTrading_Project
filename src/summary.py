@@ -7,8 +7,10 @@ from utils import adjust_types
 from typing import Dict, Any
 import json
 from simple_colors import red
-from file_chooser import choose_file
+from file_chooser import *
 import os
+
+
 
 class Summary:
     def __init__(self, data=None):
@@ -37,8 +39,8 @@ class Summary:
         summary = cls()
         summary.total_return = data['Total return']
         summary.sharpe = data['Sharpe']
-        summary.sortino = data['Sortino']
-        summary.max_balance_drowdown = data['Max balance drawdown']
+        # summary.sortino = data['Sortino']
+        # summary.max_balance_drowdown = data['Max balance drawdown']
         summary.max_drawdown = data['Max drawdown']
         summary.returns_std = data['Returns std']
         summary.downside_deviation = data['Downside deviation']
@@ -50,12 +52,12 @@ class Summary:
 
 
 
-    
+
     def print_results(self):
         print(red("Total return:", "bold"), f"{self.total_return}%")
         print(red("Sharpe:", "bold"), f"{self.sharpe}")
-        print(red("Sortino:", "bold"), f"{self.sortino}%")
-        print(red("Max balance drawdown:", "bold"), f"{self.max_balance_drowdown}%")
+        # print(red("Sortino:", "bold"), f"{self.sortino}%")
+        # print(red("Max balance drawdown:", "bold"), f"{self.max_balance_drowdown}%")
         print(red("Max drawdown:", "bold"), f"{self.max_drawdown}%")
         print(red("Returns std:", "bold"), f"{self.returns_std}%")
         print(red("Downside deviation:", "bold"), f"{self.downside_deviation}%")
@@ -129,28 +131,32 @@ class Summary:
         )
 
     def get_results(self):
-            return {
-                "Total return": self.total_return,
-                "Sharpe": self.sharpe,
-                "Sortino": self.sortino,
-                "Max balance drawdown": self.max_balance_drowdown,
-                "Max drawdown": self.max_drawdown,
-                "Returns std": self.returns_std,
-                "Downside deviation": self.downside_deviation,
-                "Best trade": self.best_trade,
-                "Worst trade": self.worst_trade,
-                "Positive trades": self.positive_trades,
-                "Positive trading days": self.positive_trading_days,
+        return {
+            "Total return": self.total_return,
+            "Sharpe": self.sharpe,
+            # "Sortino": self.sortino,
+            # "Max balance drawdown": self.max_balance_drowdown,
+            "Max drawdown": self.max_drawdown,
+            "Returns std": self.returns_std,
+            "Downside deviation": self.downside_deviation,
+            "Best trade": self.best_trade,
+            "Worst trade": self.worst_trade,
+            "Positive trades": self.positive_trades,
+            "Positive trading days": self.positive_trading_days,
             }
 
 
 def main():
 
-    data_directory = input("Enter the path of the directory containing data files: ")
-    input_name, _ = os.path.splitext(choose_file(data_directory))
-    data = pd.read_csv(os.path.join(data_directory, f"{input_name}.csv"))
+    # data_directory = input("Enter the path of the directory containing data files: ")
+    # input_name, _ = os.path.splitext(choose_file(data_directory))
+    # data = pd.read_csv(os.path.join(data_directory, f"{input_name}2015_2019_default_params_1stop_res.csv"))
+    data = load_data_from_directory()
+    print(data.head())
     unique_tickers = data['Ticker'].unique()
     unique_strategies = data['Strategy'].unique()
+    print(f"Unique Tickers: {unique_tickers}")
+    print(f"Unique Strategies: {unique_strategies}")
 
     summary_results = {}
     for ticker in unique_tickers:
@@ -158,7 +164,7 @@ def main():
         for strategy in unique_strategies:
             ticker_strategy_data = data[(data["Ticker"] == ticker) & (data['Strategy'] == strategy)]
             summary = Summary(ticker_strategy_data)
-            summary_results[f"{ticker}_{strategy}"] = summary.get_results()
+            summary_results[ticker][f"{strategy}"] = summary.get_results()
             print(f"Summary results for Ticker: {ticker} and Strategy: {strategy}")
             summary.print_results()
             print("\n")

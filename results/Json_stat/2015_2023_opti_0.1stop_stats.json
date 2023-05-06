@@ -1,0 +1,48 @@
+{
+    "^GSPC": {},
+    "BB_CCI": {
+        "Total return": -19.613,
+        "Sharpe": -0.679,
+        "Max drawdown": 15.954,
+        "Returns std": 0.539,
+        "Downside deviation": 0.066,
+        "Best trade": 8.858,
+        "Worst trade": -10.782,
+        "Positive trades": 60.0,
+        "Positive trading days": 0.939
+    },
+    "BB_RSI": {
+        "Total return": -12.737,
+        "Sharpe": -0.493,
+        "Max drawdown": 15.954,
+        "Returns std": 0.482,
+        "Downside deviation": 0.064,
+        "Best trade": 8.858,
+        "Worst trade": -10.782,
+        "Positive trades": 65.0,
+        "Positive trading days": 0.905
+    },
+    "B&H": {
+        "Total return": -4.794,
+        "Sharpe": -0.999,
+        "Max drawdown": 0.0,
+        "Returns std": 0.089,
+        "Downside deviation": NaN,
+        "Best trade": 0.0,
+        "Worst trade": -4.797,
+        "Positive trades": 0.0,
+        "Positive trading days": 0.0
+    },
+    "^NYA": {},
+    "^IXIC": {},
+    "^RUT": {},
+    "^STOXX": {},
+    "^AEX": {},
+    "^FCHI": {},
+    "^HSI": {},
+    "^TA125.TA": {},
+    "TA35.TA": {},
+    "^N225": {},
+    "^SSMI": {},
+    "^STI": {}
+}
