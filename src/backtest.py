@@ -1,5 +1,4 @@
 from typing import Dict
-import pdb
 
 from models import (
     OutOfMoneyException,
@@ -10,9 +9,9 @@ from models import (
     Position,
 )
 import pandas as pd
-from models import BollingerBandsRSI, BollingerBandsCCI
-from summary import Summary
-from utils import adjust_types
+# from models import BollingerBandsRSI, BollingerBandsCCI
+# from summary import Summary
+# from utils import adjust_types
 
 
 class Backtest:
@@ -108,7 +107,8 @@ class Backtest:
                     qty = (
                         self.balance * self.buy_percentage / actual_price  
                     ) * self.leverage
-                    qty = round(qty)
+                    # qty = round(qty)
+                    
                     position = self.broker_action(qty, actual_price, instruction)
                     if instruction.order_type in [OrderType.OPEN_LONG, OrderType.OPEN_SHORT]:
                         data.loc[curr_row_idx, 'Pos'] = position.qty

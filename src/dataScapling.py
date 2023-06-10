@@ -3,10 +3,12 @@ import yfinance as yf
 import numpy as np
 from file_chooser import choose_file
 import os
+
+
 def get_all_data(list, date1, date2):
     all_etf_data = pd.DataFrame()
     for tkr_str in list:
-        single_df = yf.download(tickers=tkr_str, start=date1, end=date2,interval='1d', auto_adjust=True)
+        single_df = yf.download(tickers=tkr_str, start=date1, end=date2, interval='1d', auto_adjust=True)
         single_df['Ticker'] = tkr_str
         all_etf_data = pd.concat([all_etf_data, single_df])
     all_etf_data = all_etf_data.reset_index()
@@ -28,7 +30,7 @@ def calculate_std(df, window_sizes=[20]):
 
 def calculate_cci(data, params=[14, 0.015]):
     # Calculate the Typical Price (TP)
-    data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3   
+    data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3
 
     # Calculate the Moving Average of TP
     data["TP_SMA"] = data.groupby('Ticker')["TP"].transform(lambda x: x.rolling(window=params[0]).mean())
@@ -81,8 +83,8 @@ def makeit(df, params=[[20], [20], [14, 0.015], 14]):
     df = df.dropna().reset_index(drop=True)
     sma_period = params[0][0]
     std_period = params[1][0]
-    df["BU"] = df[f'SMA_{sma_period}'] + df[f'STD_{std_period}']*2
-    df["BL"] = df[f'SMA_{sma_period}'] - df[f'STD_{std_period}']*2
+    df["BU"] = df[f'SMA_{sma_period}'] + df[f'STD_{std_period}'] * 2
+    df["BL"] = df[f'SMA_{sma_period}'] - df[f'STD_{std_period}'] * 2
     return df.copy()
 
 
@@ -93,7 +95,6 @@ def validated_input(prompt, validation_fn, *args):
             return validation_fn(value, *args)
         except Exception as e:
             print(f"Invalid input, please try again. Error: {e}")
-
 
 
 def parse_ticker_list(value, etf_list):
@@ -122,16 +123,16 @@ def parse_rsi_window(value):
 
 
 def main():
-    etf_list = ['^RUT', '^GSPC', '^STI', '^FCHI', '^HSI', '^NYA', '^AEX', '^TA125.TA', 'TA35.TA', '^N225', '^SSMI',
-                '^IXIC', '^STOXX']
-    
+    etf_list = ['^GSPC', '^RUT', '^FCHI', '^IXIC', '^SSMI', '^NYA', '^STOXX', '^AEX', '^TA125.TA', 'TA35.TA', '^N225',
+                '^HSI', '^STI']
+
     download_data = input("Do you want to download data? (y/n): ")
     if download_data.lower() == 'y':
         ticker_list = validated_input("Please enter a list of tickers separated by commas (leave blank for default): ",
-                                  parse_ticker_list, etf_list)
+                                      parse_ticker_list, etf_list)
         print(f"Using the following tickers: {ticker_list}")
         start_date, end_date = validated_input("Please enter start and end dates (YYYY-MM-DD,YYYY-MM-DD): ",
-                                           parse_date_range)
+                                               parse_date_range)
         print(f"You entered the following date range: {start_date} - {end_date}")
         etf_data = get_all_data(ticker_list, start_date, end_date)
         etf_data.to_csv(f"../Data/OHLCV/{start_date} - {end_date}_OHLCV.csv")
@@ -145,7 +146,6 @@ def main():
             etf_data = pd.read_csv(os.path.join(data_directory, f"{input_name}.csv"))
         else:
             return True
-    
 
     # etf_data = get_all_data(ticker_list, start_date, end_date)
     # etf_data.to_csv("../Data/etf_data.csv")
@@ -171,4 +171,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

@@ -1,13 +1,9 @@
-import json
-import pdb
-import os
-import pandas as pd
 from backtest import Backtest
 from strategies import BollingerRSIStrategy, BollingerCCIStrategy, BuyAndHold
 from summary import Summary
 import numpy as np
 from utils import adjust_types
-from file_chooser import choose_file
+from file_chooser import *
 
 
 
@@ -130,7 +126,12 @@ def main(params=[0.0002, 100000, 1.0, 1]):
                 strategy_results
             )  # Create a summary object for each strategy's results
             summary.print_results()  # Print the summary
-    file_name = input("Enter file name to save results: ")
+
+    while True:
+        file_name = input("Enter the name of the output file: ")
+        if file_name != "":
+            break
+
     combined_results.to_csv(f"../results/{file_name}.csv", index=False)
 
 
