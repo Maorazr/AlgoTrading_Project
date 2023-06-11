@@ -6,9 +6,18 @@ from getFiles import *
 from res_data import *
 
 dash.register_page(__name__)
+global results_df
+global file_names
+file_names = get_names('backtesting_results')
+print(file_names)
 results_df = get_default_file('0.1stop_res.csv', 'csv')
 
 layout = html.Div([
+    dcc.Dropdown(
+        id='selected-files-dropdown-results',
+        options=file_names,
+        multi=False,
+    ),
     dcc.Dropdown(
         id='indicator-selection',
         options=[
@@ -48,7 +57,7 @@ layout = html.Div([
                   )
               }
               ),
-    html.Div(id='file-output')
+    html.Div(id='file-output-results')
 ])
 
 
@@ -65,9 +74,27 @@ def create_fig(ticker, selected_strategy="BB_RSI", selected_indicator=None):
 
 
 @callback(
+    Output('file-output-results', 'children'),
+    Input('selected-files-dropdown-results', 'value')
+)
+def update_output(selected_file):
+    if selected_file:
+        file_path = f"backtesting_results/{selected_file}"
+        s3 = boto3.client('s3', aws_access_key_id=access_key,
+                          aws_secret_access_key=secret_key)
+        obj = s3.get_object(Bucket=bucket_name, Key=file_path)
+        global df
+        df = pd.read_csv(obj['Body'])  # assuming the file is csv
+        return f'You have selected: {selected_file}'
+    else:
+        return 'Please select a file'
+
+
+@callback(
     Output("stock-graph-results", "figure"),
     [Input("ticker-dropdown", "value"),
      Input("strategy-selection", "value"),
-     Input('indicator-selection', 'value')])
-def update_graph(ticker, selected_strategy, selected_indicator):
+     Input('indicator-selection', 'value'),
+     Input('selected-files-dropdown-results', 'value')])
+def update_graph(ticker, selected_strategy, selected_indicator, selected_file):
     return create_fig(ticker, selected_strategy, selected_indicator)

@@ -8,22 +8,27 @@ from temp import *
 from getFiles import *
 
 
+
+
 register_page(__name__)
 global strategy_summaries
 
-strategy_summaries = get_default_file('0.1stop_stats.json', 'json')
+global file_names
+file_names = get_names('summary_statistics')
+
+strategy_summaries = get_default_file('summary_statistics/testing.csv', 'json')
+
 layout = html.Div([
     dcc.Dropdown(
-        id='data-type-dropdown',
-        options=[{'label': data_type, 'value': data_type}
-                 for data_type in ['Stats']],
-        value='Stats'
+        id='selected-files-dropdown-statistics',
+        options=file_names,
+        multi=False,
     ),
     dcc.Dropdown(
         id='ticker-dropdown',
         options=[{'label': ticker, 'value': ticker}
-                 for ticker in strategy_summaries.keys()],
-        value=list(strategy_summaries.keys())[0]
+                 for ticker in strategy_summaries['Ticker'].unique()],
+        value=strategy_summaries['Ticker'].unique()[0]
     ),
     dcc.Graph(id='stock-graph-statistics',
               config={
@@ -36,8 +41,27 @@ layout = html.Div([
                       font={'color': 'black'},
                   )
               }
-              )
-])
+              ), html.Div(id='file-output-statistics')])
+
+
+@callback(
+    Output('file-output-statistics', 'children'),
+    Input('selected-files-dropdown-statistics', 'value')
+)
+def update_output(selected_file):
+    if selected_file:
+        file_path = f"summary_statistics/{selected_file}"
+        s3 = boto3.client('s3', aws_access_key_id='AKIA4C5ZLMSXERDLI3HV',
+                          aws_secret_access_key='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')
+        obj = s3.get_object(Bucket=bucket_name, Key=file_path)
+        global strategy_summaries
+        csv_data = obj['Body'].read().decode('utf-8')
+        strategy_summaries = pd.read_csv(StringIO(csv_data))
+        print('strategy_summaries')
+        print(strategy_summaries)
+    else:
+        return 'Please select a file'
+
 
 
 def create_fig(ticker):
@@ -47,15 +71,19 @@ def create_fig(ticker):
 
 @callback(
     Output("stock-graph-statistics", "figure"),
-    [Input("ticker-dropdown", "value")]
+    [Input("ticker-dropdown", "value"),
+     Input('selected-files-dropdown-statistics', 'value')]
 )
-def update_graph(ticker):
+def update_graph(ticker, selected_file):
     return create_fig(ticker)
 
 
 def stats_data(ticker):
-    rows = generate_rows(ticker, strategy_summaries)
-    stats_df = pd.DataFrame(rows)
+    # rows = generate_rows(ticker, strategy_summaries)
+    # stats_df = pd.DataFrame(rows)
+    # print(stats_df)
+
+    stats_df = strategy_summaries[strategy_summaries['Ticker'] == ticker]
 
     stats_df_vertical = stats_df.set_index('Strategy').T
     stats_df_vertical.columns = [col.replace(

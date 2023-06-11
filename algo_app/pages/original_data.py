@@ -11,10 +11,13 @@ dash.register_page(__name__)
 global df
 df = get_default_file('orig_data.csv', 'csv')
 
+file_names = get_names('original_data')
+
+
 layout = html.Div([
     dcc.Dropdown(
-        id='selected-files-dropdown',
-        options=[],
+        id='selected-files-dropdown-original',
+        options=file_names,
         multi=False,
     ),
     dcc.Dropdown(
@@ -40,17 +43,19 @@ layout = html.Div([
 
 @callback(
     Output('file-output', 'children'),
-    Input('selected-files-dropdown', 'value')
+    Input('selected-files-dropdown-original', 'value')
 )
-def update_output(selected_folder):
-    if selected_folder:
-        files = get_files_from_folder(selected_folder)
-        files_dict = open_files_from_object(files)
+def update_output(selected_file):
+    if selected_file:
+        file_path = f"original_data/{selected_file}"
+        s3 = boto3.client('s3', aws_access_key_id=access_key,
+                          aws_secret_access_key=secret_key)
+        obj = s3.get_object(Bucket=bucket_name, Key=file_path)
         global df
-        df = files_dict['orig_data.csv']
-        return f'You have selected: {selected_folder}'
+        df = pd.read_csv(obj['Body'])  # assuming the file is csv
+        return f'You have selected: {selected_file}'
     else:
-        return 'Please select a folder'
+        return 'Please select a file'
 
 
 @callback(

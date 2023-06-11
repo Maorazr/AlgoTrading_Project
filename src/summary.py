@@ -1,7 +1,7 @@
 from math import sqrt
 import pandas as pd
 import numpy as np
-
+from uploadData import *
 import pdb
 from utils import adjust_types
 from typing import Dict, Any
@@ -11,9 +11,10 @@ from file_chooser import *
 import os
 
 
-
 class Summary:
-    def __init__(self, data=None):
+    def __init__(self, data=None, ticker=None, strategy=None):
+        self.ticker = ticker
+        self.strategy = strategy
         if data is not None:
             if not isinstance(data.index, pd.DatetimeIndex):
                 data.index = pd.to_datetime(data['Date'])
@@ -33,7 +34,6 @@ class Summary:
             self.positive_trades = None
             self.positive_trading_days = None
 
-
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> 'Summary':
         summary = cls()
@@ -50,9 +50,6 @@ class Summary:
         summary.positive_trading_days = data['Positive trading days']
         return summary
 
-
-
-
     def print_results(self):
         print(red("Total return:", "bold"), f"{self.total_return}%")
         print(red("Sharpe:", "bold"), f"{self.sharpe}")
@@ -60,11 +57,13 @@ class Summary:
         # print(red("Max balance drawdown:", "bold"), f"{self.max_balance_drowdown}%")
         print(red("Max drawdown:", "bold"), f"{self.max_drawdown}%")
         print(red("Returns std:", "bold"), f"{self.returns_std}%")
-        print(red("Downside deviation:", "bold"), f"{self.downside_deviation}%")
+        print(red("Downside deviation:", "bold"),
+              f"{self.downside_deviation}%")
         print(red("Best trade:", "bold"), f"{self.best_trade}%")
         print(red("Worst trade:", "bold"), f"{self.worst_trade}%")
         print(red("Positive trades:", "bold"), f"{self.positive_trades}%")
-        print(red("Positive trading days:", "bold"), f"{self.positive_trading_days}%")
+        print(red("Positive trading days:", "bold"),
+              f"{self.positive_trading_days}%")
 
     def init_from_csv(self, csv_path):
         data = pd.read_csv(csv_path)
@@ -95,7 +94,8 @@ class Summary:
 
         # total_return
         end_balance = data["Balance"].iloc[-1]
-        total_return = ((end_balance - initial_balance) / initial_balance) * 100
+        total_return = ((end_balance - initial_balance) /
+                        initial_balance) * 100
         self.total_return = round(total_return, 3)
 
         # sharpe ratio = total return percentage / standard deviation * sqrt(num of trading days)
@@ -106,7 +106,8 @@ class Summary:
         # downside deviation
         # remove positive returns
         negative_returns_std = (
-            daily_returns_series.apply(lambda x: x if x < 0 else np.nan).dropna()
+            daily_returns_series.apply(
+                lambda x: x if x < 0 else np.nan).dropna()
         ).std() / sqrt(len(daily_returns_series))
         self.downside_deviation = round(negative_returns_std * 100, 3)
 
@@ -119,8 +120,10 @@ class Summary:
 
         # Percentage of positive trades
         trades = data["Return rate"].dropna()
-        profitable_trades = trades.apply(lambda x: x if x > 0 else np.nan).dropna()
-        self.positive_trades = round((len(profitable_trades) / len(trades)) * 100, 3)
+        profitable_trades = trades.apply(
+            lambda x: x if x > 0 else np.nan).dropna()
+        self.positive_trades = round(
+            (len(profitable_trades) / len(trades)) * 100, 3)
 
         # profitable_days
         profitable_days = daily_returns_series.apply(
@@ -132,6 +135,8 @@ class Summary:
 
     def get_results(self):
         return {
+            "Ticker": self.ticker,
+            "Strategy": self.strategy,
             "Total return": self.total_return,
             "Sharpe": self.sharpe,
             # "Sortino": self.sortino,
@@ -143,14 +148,11 @@ class Summary:
             "Worst trade": self.worst_trade,
             "Positive trades": self.positive_trades,
             "Positive trading days": self.positive_trading_days,
-            }
+        }
 
 
 def main():
 
-    # data_directory = input("Enter the path of the directory containing data files: ")
-    # input_name, _ = os.path.splitext(choose_file(data_directory))
-    # data = pd.read_csv(os.path.join(data_directory, f"{input_name}2015_2019_default_params_1stop_res.csv"))
     data = load_data_from_directory()
     print(data.head())
     unique_tickers = data['Ticker'].unique()
@@ -158,21 +160,38 @@ def main():
     print(f"Unique Tickers: {unique_tickers}")
     print(f"Unique Strategies: {unique_strategies}")
 
+    all_rows = []
     summary_results = {}
     for ticker in unique_tickers:
         summary_results[ticker] = {}
         for strategy in unique_strategies:
-            ticker_strategy_data = data[(data["Ticker"] == ticker) & (data['Strategy'] == strategy)]
-            summary = Summary(ticker_strategy_data)
-            summary_results[ticker][f"{strategy}"] = summary.get_results()
-            print(f"Summary results for Ticker: {ticker} and Strategy: {strategy}")
-            summary.print_results()
-            print("\n")
+            # ticker_strategy_data = data[(data["Ticker"] == ticker) & (data['Strategy'] == strategy)]
+            # summary = Summary(ticker_strategy_data)
+            # summary_results[ticker][f"{strategy}"] = summary.get_results()
+            # print(f"Summary results for Ticker: {ticker} and Strategy: {strategy}")
+            # summary.print_results()
+            # print("\n")
+            ticker_strategy_data = data[(data["Ticker"] == ticker) & (
+                data['Strategy'] == strategy)]
+            if not ticker_strategy_data.empty:
+                summary = Summary(ticker_strategy_data, ticker, strategy)
+                summary_dict = summary.get_results()
+                summary_dict['Ticker'] = ticker
+                summary_dict['Strategy'] = strategy
+                all_rows.append(summary_dict)
+                print(
+                    f"Summary results for Ticker: {ticker} and Strategy: {strategy}")
+                summary.print_results()
+                print("\n")
+
+    df = pd.DataFrame(all_rows)
     output_name = input("Enter file name to save summary results: ")
     output_directory = "output"  # Change this to the desired folder
-    output_path = f"../results/Json_stat/{output_name}.json"
-    with open(output_path, "w") as outfile:
-        json.dump(summary_results, outfile, indent=4)
+    output_path = f"../results/Json_stat/{output_name}.csv"
+    # with open(output_path, "w") as outfile:
+    #     json.dump(summary_results, outfile, indent=4)
+    df.to_csv(output_path, index=False)
+    upload_data_to_s3(df, 'summary_statistics', f"{output_name}.csv")
 
 
 if __name__ == "__main__":

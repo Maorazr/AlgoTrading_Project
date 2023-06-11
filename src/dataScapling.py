@@ -3,12 +3,14 @@ import yfinance as yf
 import numpy as np
 from file_chooser import choose_file
 import os
+from uploadData import *
 
 
 def get_all_data(list, date1, date2):
     all_etf_data = pd.DataFrame()
     for tkr_str in list:
-        single_df = yf.download(tickers=tkr_str, start=date1, end=date2, interval='1d', auto_adjust=True)
+        single_df = yf.download(
+            tickers=tkr_str, start=date1, end=date2, interval='1d', auto_adjust=True)
         single_df['Ticker'] = tkr_str
         all_etf_data = pd.concat([all_etf_data, single_df])
     all_etf_data = all_etf_data.reset_index()
@@ -18,13 +20,15 @@ def get_all_data(list, date1, date2):
 
 def calculate_sma(df, window_sizes=[20]):
     for w in window_sizes:
-        df[f'SMA_{w}'] = df.groupby('Ticker')['TP'].transform(lambda x: x.rolling(window=w).mean())
+        df[f'SMA_{w}'] = df.groupby('Ticker')['TP'].transform(
+            lambda x: x.rolling(window=w).mean())
     return df
 
 
 def calculate_std(df, window_sizes=[20]):
     for w in window_sizes:
-        df[f'STD_{w}'] = df.groupby('Ticker')['TP'].transform(lambda x: x.rolling(window=w).std())
+        df[f'STD_{w}'] = df.groupby('Ticker')['TP'].transform(
+            lambda x: x.rolling(window=w).std())
     return df
 
 
@@ -33,7 +37,8 @@ def calculate_cci(data, params=[14, 0.015]):
     data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3
 
     # Calculate the Moving Average of TP
-    data["TP_SMA"] = data.groupby('Ticker')["TP"].transform(lambda x: x.rolling(window=params[0]).mean())
+    data["TP_SMA"] = data.groupby('Ticker')["TP"].transform(
+        lambda x: x.rolling(window=params[0]).mean())
 
     # Calculate the Mean Deviation
     data["MD"] = data.groupby('Ticker')["TP"].transform(
@@ -62,7 +67,8 @@ def calculate_rsi_for_all_etfs(df, n=14):
     for etf in df['Ticker'].unique():
         etf_df = df[df['Ticker'] == etf]
         rsi = calculate_rsi(etf_df, n)
-        rsi_df = pd.DataFrame({'Ticker': etf_df['Ticker'], 'Date': etf_df['Date'], 'RSI': rsi})
+        rsi_df = pd.DataFrame(
+            {'Ticker': etf_df['Ticker'], 'Date': etf_df['Date'], 'RSI': rsi})
         rsi_df_list.append(rsi_df)
     rsi_df = pd.concat(rsi_df_list, ignore_index=True)
     return rsi_df
@@ -76,7 +82,8 @@ def makeit(df, params=[[20], [20], [14, 0.015], 14]):
     modified_dfs = []
     for etf in df['Ticker'].unique():
         etf_df = df[df['Ticker'] == etf].copy()
-        etf_df = calculate_rsi(etf_df, params[3])  # This will add RSI column to etf_df
+        # This will add RSI column to etf_df
+        etf_df = calculate_rsi(etf_df, params[3])
         modified_dfs.append(etf_df)
 
     df = pd.concat(modified_dfs, ignore_index=True)
@@ -133,40 +140,49 @@ def main():
         print(f"Using the following tickers: {ticker_list}")
         start_date, end_date = validated_input("Please enter start and end dates (YYYY-MM-DD,YYYY-MM-DD): ",
                                                parse_date_range)
-        print(f"You entered the following date range: {start_date} - {end_date}")
+        print(
+            f"You entered the following date range: {start_date} - {end_date}")
         etf_data = get_all_data(ticker_list, start_date, end_date)
         etf_data.to_csv(f"../Data/OHLCV/{start_date} - {end_date}_OHLCV.csv")
 
     else:
-        processe_data = input('Do you want to open file from home directory? (y/n): ')
+        processe_data = input(
+            'Do you want to open file from home directory? (y/n): ')
         if processe_data.lower() == 'y':
-            data_directory = input("Enter the path of the directory containing data files: ")
+            data_directory = input(
+                "Enter the path of the directory containing data files: ")
             chosen_file = choose_file(data_directory)
             input_name, _ = os.path.splitext(chosen_file)
-            etf_data = pd.read_csv(os.path.join(data_directory, f"{input_name}.csv"))
+            etf_data = pd.read_csv(os.path.join(
+                data_directory, f"{input_name}.csv"))
         else:
             return True
 
     # etf_data = get_all_data(ticker_list, start_date, end_date)
     # etf_data.to_csv("../Data/etf_data.csv")
 
-    sma_windows = validated_input("Please enter a list of SMA windows separated by commas: ", parse_int_list)
+    sma_windows = validated_input(
+        "Please enter a list of SMA windows separated by commas: ", parse_int_list)
     print(f"You entered the following SMA windows: {sma_windows}")
 
-    std_windows = validated_input("Please enter a list of STD windows separated by commas: ", parse_int_list)
+    std_windows = validated_input(
+        "Please enter a list of STD windows separated by commas: ", parse_int_list)
     print(f"You entered the following STD windows: {std_windows}")
 
     cci_params = validated_input("Please enter a list of CCI parameters separated by commas period,std : ",
                                  parse_cci_params)
     print(f"You entered the following CCI parameters: {cci_params}")
 
-    rsi_window = validated_input("Please enter a RSI window: ", parse_rsi_window)
+    rsi_window = validated_input(
+        "Please enter a RSI window: ", parse_rsi_window)
     print(f"You entered the following RSI window: {rsi_window}")
 
     params = [sma_windows, std_windows, cci_params, rsi_window]
     print(f"Using the following parameters: {params}")
     file_name = input("Please enter a file name: ")
-    makeit(etf_data, params).to_csv(f"../Data/Processed/{file_name}.csv")
+    df = makeit(etf_data, params)
+    df.to_csv(f"../Data/Processed/{file_name}.csv")
+    upload_data_to_s3(df, 'original_data', f"{file_name}.csv")
 
 
 if __name__ == '__main__':
