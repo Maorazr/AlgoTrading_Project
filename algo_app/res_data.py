@@ -17,7 +17,7 @@ def res_data(ticker_data, ticker, entry_points, exit_points, selected_indicators
                              name='Exit'))
 
     fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['Close'], mode='lines', line=dict(color='#6495ED'),
-                             name='Close', yaxis='y1'))
+                             name='Adj Close', yaxis='y1'))
     fig.add_trace(
         go.Scatter(x=ticker_data['Date'], y=ticker_data['BU'], line=dict(color='green'), name='BU', yaxis='y1'))
     fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['BL'], line=dict(

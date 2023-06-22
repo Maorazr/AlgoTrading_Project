@@ -7,6 +7,8 @@ from dash.dependencies import Input, Output, State
 import json
 import boto3
 
+global sma_column
+
 
 def find_sma_column(ticker_data):
     global sma_column
@@ -17,15 +19,15 @@ def find_sma_column(ticker_data):
     return sma_column
 
 
-
 def generate_rows(ticker, strategy_summaries):
-    ticker_strategy_keys = [key for key in strategy_summaries.keys() if key.startswith(ticker)]
-    strategy_results = {key: strategy_summaries[key] for key in ticker_strategy_keys}
+    ticker_strategy_keys = [
+        key for key in strategy_summaries.keys() if key.startswith(ticker)]
+    strategy_results = {
+        key: strategy_summaries[key] for key in ticker_strategy_keys}
     rows = []
     for strategy_name, summary in strategy_results.items():
         if not summary:  # Skip if the summary is empty
             continue
-
         row = {
             'Strategy': strategy_name,
             'Total return': summary['Total return'],
@@ -45,12 +47,13 @@ def generate_rows(ticker, strategy_summaries):
     return rows
 
 
-
-
 def common_traces(ticker_data, ticker, fig):
+    global sma_column
+    sma_column = find_sma_column(ticker_data)
     fig.add_trace(
         go.Scatter(x=ticker_data['Date'], y=ticker_data['BU'], line=dict(color='green'), name='BU', yaxis='y1'))
-    fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['BL'], line=dict(color='red'), name='BL', yaxis='y1'))
+    fig.add_trace(go.Scatter(x=ticker_data['Date'], y=ticker_data['BL'], line=dict(
+        color='red'), name='BL', yaxis='y1'))
     fig.add_trace(
         go.Scatter(x=ticker_data['Date'], y=ticker_data[sma_column], line=dict(color='orange'), name=sma_column,
                    yaxis='y1'))
@@ -58,10 +61,10 @@ def common_traces(ticker_data, ticker, fig):
         go.Scatter(x=ticker_data['Date'], y=ticker_data['RSI'], line=dict(color='blue'), name='RSI', yaxis='y2'))
     fig.add_trace(
         go.Scatter(x=ticker_data['Date'], y=ticker_data['CCI'], line=dict(color='purple'), name='CCI', yaxis='y3'))
-    fig.add_trace(go.Bar(x=ticker_data['Date'], y=ticker_data['Volume'], showlegend=False, yaxis='y4'))
+    fig.add_trace(go.Bar(
+        x=ticker_data['Date'], y=ticker_data['Volume'], showlegend=False, yaxis='y4'))
 
     return fig
-
 
 
 def optional_indicators(ticker_data, ticker, fig, selected_indicators):
@@ -72,4 +75,5 @@ def optional_indicators(ticker_data, ticker, fig, selected_indicators):
         fig.add_trace(
             go.Scatter(x=ticker_data['Date'], y=ticker_data['CCI'], line=dict(color='purple'), name='CCI', yaxis='y3'))
     if 'Volume' in selected_indicators:
-        fig.add_trace(go.Bar(x=ticker_data['Date'], y=ticker_data['Volume'], showlegend=False, yaxis='y4'))
+        fig.add_trace(go.Bar(
+            x=ticker_data['Date'], y=ticker_data['Volume'], showlegend=False, yaxis='y4'))
