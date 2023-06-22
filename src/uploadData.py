@@ -1,5 +1,8 @@
-from io import StringIO
+# from io import StringIO
+from io import BytesIO
+from tqdm import tqdm
 import boto3
+# from tqdm import tqdm
 
 global bucket_name
 global access_key
@@ -16,10 +19,16 @@ def upload_data_to_s3(df, folder_name, file_name):
                              aws_access_key_id='AKIA4C5ZLMSXERDLI3HV',
                              aws_secret_access_key='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')
 
-    s3_resource = boto3.resource('s3', aws_access_key_id='AKIA4C5ZLMSXERDLI3HV',
-                                 aws_secret_access_key='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')
-    csv_buffer = StringIO()
+    csv_buffer = BytesIO()
     df.to_csv(csv_buffer, index=False)
+    csv_buffer.seek(0)
 
-    s3_resource.Object(
-        bucket_name, f'{folder_name}/{file_name}').put(Body=csv_buffer.getvalue())
+    progress = tqdm(total=df.size, unit='B', unit_scale=True)
+
+    def progress_callback(sent):
+        progress.update(sent)
+
+    s3_client.upload_fileobj(
+        csv_buffer, bucket_name, f'{folder_name}/{file_name}', Callback=progress_callback)
+
+    progress.close()

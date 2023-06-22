@@ -1,7 +1,7 @@
 import pandas as pd
 import yfinance as yf
 import numpy as np
-from file_chooser import choose_file
+from file_chooser import *
 import os
 from uploadData import *
 
@@ -95,47 +95,14 @@ def makeit(df, params=[[20], [20], [14, 0.015], 14]):
     return df.copy()
 
 
-def validated_input(prompt, validation_fn, *args):
-    while True:
-        try:
-            value = input(prompt)
-            return validation_fn(value, *args)
-        except Exception as e:
-            print(f"Invalid input, please try again. Error: {e}")
-
-
-def parse_ticker_list(value, etf_list):
-    if value.strip() == '':
-        return etf_list
-    else:
-        return [ticker.strip().upper() for ticker in value.split(',')]
-
-
-def parse_date_range(value):
-    start_date, end_date = value.split(',')
-    return start_date.strip(), end_date.strip()
-
-
-def parse_int_list(value):
-    return [int(w.strip()) for w in value.split(',')]
-
-
-def parse_cci_params(value):
-    cci_period, cci_std = map(float, value.split(','))
-    return [int(cci_period), cci_std]
-
-
-def parse_rsi_window(value):
-    return int(value.strip())
-
-
 def main():
     etf_list = ['^GSPC', '^RUT', '^FCHI', '^IXIC', '^SSMI', '^NYA', '^STOXX', '^AEX', '^TA125.TA', 'TA35.TA', '^N225',
                 '^HSI', '^STI']
 
+    input_dir = '../Data/OHLCV/'
     download_data = input("Do you want to download data? (y/n): ")
     if download_data.lower() == 'y':
-        ticker_list = validated_input("Please enter a list of tickers separated by commas (leave blank for default): ",
+        ticker_list = validated_input(f"Please enter a list of tickers separated by commas (leave blank for default):\n{etf_list}",
                                       parse_ticker_list, etf_list)
         print(f"Using the following tickers: {ticker_list}")
         start_date, end_date = validated_input("Please enter start and end dates (YYYY-MM-DD,YYYY-MM-DD): ",
@@ -149,32 +116,25 @@ def main():
         processe_data = input(
             'Do you want to open file from home directory? (y/n): ')
         if processe_data.lower() == 'y':
-            data_directory = input(
-                "Enter the path of the directory containing data files: ")
-            chosen_file = choose_file(data_directory)
-            input_name, _ = os.path.splitext(chosen_file)
-            etf_data = pd.read_csv(os.path.join(
-                data_directory, f"{input_name}.csv"))
+            etf_data = load_data_from_directory(input_dir)
         else:
             return True
 
-    # etf_data = get_all_data(ticker_list, start_date, end_date)
-    # etf_data.to_csv("../Data/etf_data.csv")
 
     sma_windows = validated_input(
-        "Please enter a list of SMA windows separated by commas: ", parse_int_list)
+        "Please enter a list of SMA windows separated by commas (leave blank for 14):  ", parse_int_list, '14')
     print(f"You entered the following SMA windows: {sma_windows}")
 
     std_windows = validated_input(
-        "Please enter a list of STD windows separated by commas: ", parse_int_list)
+        "Please enter a list of STD windows separated by commas (leave blank for 14): ", parse_int_list, '14')
     print(f"You entered the following STD windows: {std_windows}")
 
-    cci_params = validated_input("Please enter a list of CCI parameters separated by commas period,std : ",
-                                 parse_cci_params)
+    cci_params = validated_input("Please enter a list of CCI parameters separated by commas period,std (leave empty for 10,0.015) : ",
+                                 parse_cci_params, '10,0.015')
     print(f"You entered the following CCI parameters: {cci_params}")
 
     rsi_window = validated_input(
-        "Please enter a RSI window: ", parse_rsi_window)
+        "Please enter a RSI window (leave empty for 10): ", parse_rsi_window, '10')
     print(f"You entered the following RSI window: {rsi_window}")
 
     params = [sma_windows, std_windows, cci_params, rsi_window]
@@ -182,7 +142,9 @@ def main():
     file_name = input("Please enter a file name: ")
     df = makeit(etf_data, params)
     df.to_csv(f"../Data/Processed/{file_name}.csv")
-    upload_data_to_s3(df, 'original_data', f"{file_name}.csv")
+    to_upload = input("Upload to S3? (y/n): ")
+    if(to_upload == 'y'):
+        upload_data_to_s3(df, 'original_data', f"{file_name}.csv")
 
 
 if __name__ == '__main__':

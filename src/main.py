@@ -13,10 +13,11 @@ def run_backtest_on_ticker(data: pd.DataFrame, **backtest_kwargs):
 
 
 def main(params=[0.0002, 100000, 1.0, 1]):
-    data_directory = input(
-        "Enter the path of the directory containing data files: ")
-    input_name, _ = os.path.splitext(choose_file(data_directory))
-    data = pd.read_csv(os.path.join(data_directory, f"{input_name}.csv"))
+    input_dir = '../Data/Processed'
+    # data_directory = input(
+    #     "Enter the path of the directory containing data files or press enter for default: ")
+    # input_name, _ = os.path.splitext(choose_file(data_directory))
+    data = load_data_from_directory(input_dir)
     data = adjust_types(data)
     temp = input(
         "Enter array of params separated with commas commission, balance, leverage, buy_percentage (leave blank for default): ")
@@ -30,13 +31,13 @@ def main(params=[0.0002, 100000, 1.0, 1]):
         else:
             return default_value
 
-    stop_loss = get_float_input("Enter Stop Loss (leave blank for 0.1)", 0.1)
+    stop_loss = get_float_input("Enter Stop Loss (leave blank for 0.25)", 0.25)
     print(f"Stop Loss : {stop_loss}")
 
-    rsi_high = get_float_input("Enter RSI High (leave blank for 70): ", 70)
+    rsi_high = get_float_input("Enter RSI High (leave blank for 62): ", 62)
     print(f"Rsi High : {rsi_high}")
 
-    rsi_low = get_float_input("Enter RSI Low  (leave blank for 30): ", 30)
+    rsi_low = get_float_input("Enter RSI Low  (leave blank for 38): ", 38)
     print(f"Rsi Low Mul: {rsi_low}")
 
     cci_high = get_float_input("Enter CCI High  (leave blank for 100): ", 100)
@@ -99,43 +100,15 @@ def main(params=[0.0002, 100000, 1.0, 1]):
     # Reset the index of the combined_results DataFrame
     combined_results.reset_index(drop=True, inplace=True)
 
-    # strategy_summaries = {}
-    # # Recreate Summary objects from the loaded data
-    # for ticker, ticker_data in ticker_groups:
-    #     # Generate the Summary objects for each strategy
-    #     # bollinger_rsi_summary = Summary(bollinger_rsi_results).print_results
-    #     # bollinger_cci_summary = Summary(bollinger_cci_results).print_results
-    #     # buy_and_hold_summary = Summary(buy_and_hold_results).print_results
-    #     bollinger_rsi_summary = str(
-    #         Summary(bollinger_rsi_results).print_results)
-    #     bollinger_cci_summary = str(
-    #         Summary(bollinger_cci_results).print_results)
-    #     buy_and_hold_summary = str(Summary(buy_and_hold_results).print_results)
-    #     strategy_summaries[ticker] = {
-    #         "BollingerRSIStrategy": bollinger_rsi_summary,
-    #         "BollingerCCIStrategy": bollinger_cci_summary,
-    #         "BuyAndHold": buy_and_hold_summary,
-    #     }
-
-    # # with open('strategy_summaries.json', 'w') as f:
-    # #     json.dump(strategy_summaries, f)
-    # # Save the combined_results DataFrame to a CSV file
-    # for ticker, results in backtest_results.items():
-    #     print(f"\nResults for {ticker}:")
-    #     for strategy_name, strategy_results in results.items():
-    #         print(f"{strategy_name} Results:")
-    #         summary = Summary(
-    #             strategy_results
-    #         )  # Create a summary object for each strategy's results
-    #         summary.print_results()  # Print the summary
-
     while True:
         file_name = input("Enter the name of the output file: ")
         if file_name != "":
             break
-
-    combined_results.to_csv(f"../results/{file_name}.csv", index=False)
-    upload_data_to_s3(combined_results, 'backtesting_results',
+    output_directory = '../Data/Results/'
+    combined_results.to_csv(f"{output_directory}{file_name}.csv", index=False)
+    to_upload = input("Upload to S3? (y/n): ")
+    if(to_upload == 'y'):
+        upload_data_to_s3(combined_results, 'backtesting_results',
                       f"{file_name}.csv")
 
 

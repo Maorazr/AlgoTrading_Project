@@ -33,7 +33,6 @@ class Backtest:
         self.window_size = window_size
         self.buy_percentage = buy_percentage
 
-
     def broker_action(self, qty: float, price: float, instruction: BrokerInstruction):
         if instruction.order_type == OrderType.OPEN_LONG:
             self.balance -= qty * price * (1 + self.commission)
@@ -46,11 +45,10 @@ class Backtest:
         elif instruction.order_type == OrderType.CLOSE_LONG:
             self.balance += qty * price * (1 - self.commission)
             return None
-            
+
         else:  # OrderType.CLOSE_SHORT
             self.balance -= qty * price * (1 + self.commission)
             return None
-
 
     def calc_price(
         self, instructions: BrokerInstruction, candle: Dict, change_size: int = 2.0
@@ -76,18 +74,18 @@ class Backtest:
         else:
             return_rate = (close_price - open_price) / open_price
 
-        return_rate_with_comm = return_rate * (1 - self.commission) * self.leverage
+        return_rate_with_comm = return_rate * \
+            (1 - self.commission) * self.leverage
         return return_rate_with_comm
 
-
     def backtest(self):
-        
+
         position: Position = None
         data = self.data.copy(deep=True)
         data['Pos'] = 0
         data['Strategy'] = self.strategy.name
         for i in range(self.window_size, len(self.data) + 1):
-            curr_data = data[i - self.window_size : i]
+            curr_data = data[i - self.window_size: i]
             past_data = curr_data[:-1]
             curr_row_idx = data.index[i - 1]
             curr_candle = curr_data[-1:].to_dict(orient="records")[0]
@@ -99,20 +97,21 @@ class Backtest:
                 instruction: BrokerInstruction = self.strategy.enter_position(
                     data=past_data
                 )
-                
+
                 if instruction is not None:
                     data.loc[curr_row_idx, "Actions"] = instruction.order_type
-                    
+
                     actual_price = self.calc_price(instruction, curr_candle)
                     qty = (
-                        self.balance * self.buy_percentage / actual_price  
+                        self.balance * self.buy_percentage / actual_price
                     ) * self.leverage
                     # qty = round(qty)
-                    
-                    position = self.broker_action(qty, actual_price, instruction)
+
+                    position = self.broker_action(
+                        qty, actual_price, instruction)
                     if instruction.order_type in [OrderType.OPEN_LONG, OrderType.OPEN_SHORT]:
                         data.loc[curr_row_idx, 'Pos'] = position.qty
-                   
+
             else:
                 if i == len(self.data):
                     last_close = list(curr_data["TP"])[-1]
@@ -131,7 +130,7 @@ class Backtest:
 
                 if instruction is not None:
                     data.loc[curr_row_idx, "Actions"] = 0  # position closed
-                    
+
                     actual_price = self.calc_price(instruction, curr_candle)
                     return_rate = self.calc_return(position, actual_price)
 
@@ -142,8 +141,7 @@ class Backtest:
                     if instruction.order_type in [OrderType.CLOSE_LONG, OrderType.CLOSE_SHORT]:
                         data.loc[curr_row_idx, 'Pos'] = 0
                         data.loc[curr_row_idx, "Balance"] = self.balance
-        
-        trading_data = data[self.window_size -1:]
-        trading_data.to_csv(f"../results/stra_tick_res/{self.strategy.name}_{trading_data.iloc[1]['Ticker']}.csv")
-        return trading_data
 
+        trading_data = data[self.window_size - 1:]
+        # trading_data.to_csv(f"../results/stra_tick_res/{self.strategy.name}_{trading_data.iloc[1]['Ticker']}.csv")
+        return trading_data
