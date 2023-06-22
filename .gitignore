@@ -1,4 +1,8 @@
-Data/
-algo_app/Data/
-algo_app/new_app/
-results/
+.env
+new_app.zip
+Data/OHLCV/
+Data/Processed/
+Data/Results/
+Data/Summary/
+Data:Results.zip
+src.zip
